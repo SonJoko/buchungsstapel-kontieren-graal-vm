@@ -2,11 +2,13 @@ package ui.app.ui.view
 
 import data.Data
 import data.DataModel
+import javafx.beans.value.ObservableBooleanValue
 import javafx.scene.control.*
 import javafx.scene.input.KeyEvent
 import javafx.scene.paint.Color
 import javafx.scene.text.FontWeight
 import javafx.stage.FileChooser
+import javafx.stage.StageStyle
 import tornadofx.*
 import ui.controller.ViewController
 import ui.css.CSSTableCell
@@ -19,22 +21,26 @@ class MasterView : View("Buchungsstapel kontieren") {
 }
 
 class ControlView : View() {
-    private var inputFile: TextField by singleAssign()
-    private var outputFile: TextField by singleAssign()
+    private val controller: ViewController by inject()
+
+    var inputFile: TextField by singleAssign()
+    var outputFile: TextField by singleAssign()
     lateinit var messageLabel: Label
 
     override val root = vbox {
         style {
             padding = box(10.px)
+            fontSize = 11.pt
         }
         hbox(spacing = 10) {
             style {
                 padding = box(2.px)
             }
             label("Eingabe") {
-                setPrefSize(70.0, 20.0);
+                setPrefSize(80.0, 20.0);
             }
             inputFile = textfield {
+                setPrefSize(220.0, 20.0)
                 isEditable = false
                 style {
                     backgroundColor += Color.LIGHTGRAY
@@ -42,14 +48,17 @@ class ControlView : View() {
             }
             button("...") {
                 action {
-                    inputFile.text = selectFile("Dateiformat")
+                    controller.onButtonSelectImportFilePressed()
                 }
             }
             button("Buchungsimport starten") {
-                action {
-                    inputFile.text = selectFile("Dateiformat")
+                enableWhen {
+                    controller.inputFileOK
                 }
-                prefWidth = 150.0
+                action {
+                    controller.onButtonImportPressed()
+                }
+                prefWidth = 200.0
             }
 
 
@@ -59,9 +68,10 @@ class ControlView : View() {
                 padding = box(2.px)
             }
             label("Ausgabe") {
-                setPrefSize(70.0, 20.0);
+                setPrefSize(80.0, 20.0);
             }
             outputFile = textfield() {
+                setPrefSize(220.0, 20.0)
                 isEditable = false
                 style {
                     backgroundColor += Color.LIGHTGRAY
@@ -69,14 +79,17 @@ class ControlView : View() {
             }
             button("...") {
                 action {
-                    outputFile.text = selectFile("Dateiformat")
+                    controller.onButtonSelectExportFilePressed()
                 }
             }
             button("Buchungsexport starten") {
-                action {
-                    inputFile.text = selectFile("Dateiformat")
+                enableWhen {
+                    controller.outputFileOK
                 }
-                prefWidth = 150.0
+                action {
+                    controller.onButtonExportPressed()
+                }
+                prefWidth = 200.0
             }
         }
 
@@ -120,11 +133,10 @@ class TableView : View() {
     override val root = tableview(controller.records) {
         setSortPolicy { _ -> false }
 
-
         style {
             fontSize = 14.pt
         }
-        prefWidth = 800.0
+        prefWidth = 1024.0
         column("Datum", Data::datum) {
             isReorderable = false
             fixedWidth(80)
@@ -163,7 +175,7 @@ class TableView : View() {
         column("Ust", Data::umsatzSteuer) {
             id = COLUMN_UST_ID
             isReorderable = false
-            fixedWidth(80)
+            fixedWidth(100)
             makeEditable()
             cellDecorator { cellValue ->
                 styleWithCheck(cellValue, Data.Validation.UST_REGEX)
@@ -212,6 +224,9 @@ class TableView : View() {
 class MenuView : View() {
     private val controller: ViewController by inject()
     override val root = menubar {
+        style {
+            fontSize = 12.pt
+        }
         menu("Datei") {
             item("Einstellungen").action {
                 controller.closeApp()
@@ -223,7 +238,7 @@ class MenuView : View() {
         }
         menu("Hilfe") {
             item("Version").action {
-                controller.closeApp()
+                find<VersionView>().openModal(stageStyle = StageStyle.UTILITY)
             }
             item("Anleitung").action {
                 controller.closeApp()

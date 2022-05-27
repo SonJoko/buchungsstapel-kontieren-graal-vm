@@ -17,7 +17,5 @@ fun main(args: Array<String>) {
 
 // TODO:
 
-// KTS
-// Pfeiltasten rechts links überspringen
 // Schriftgröße anpassen
-// 
+// Version

@@ -1,11 +1,13 @@
 package ui.controller
 
 import data.Data
+import javafx.beans.property.SimpleBooleanProperty
 import javafx.scene.control.TableColumn
 import javafx.scene.control.TablePosition
 import javafx.scene.control.TableView
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
+import javafx.stage.FileChooser
 import tornadofx.*
 import ui.app.ui.view.ControlView
 import ui.app.ui.view.TableView.Companion.COLUMN_HABEN_ID
@@ -15,11 +17,14 @@ import kotlin.system.exitProcess
 class ViewController : Controller() {
     val controlView: ControlView by inject()
 
-    val records = listOf(
+    val records = mutableListOf(
         Data("07.09", "1", "1400", "1030", "Buchungstext blablabla", "920.00", "19.00"),
         Data("11.11", "2", "4000", "0070", "Buchungstext blablabla", "77770.00", "07.00"),
         Data("07.09", "3", "1400", "1234", "Buchungstext blablabla", "-22420.00", "47.11")
     ).asObservable()
+
+    val inputFileOK = SimpleBooleanProperty(false)
+    val outputFileOK = SimpleBooleanProperty(false)
 
     fun closeApp() {
         exitProcess(0)
@@ -33,6 +38,7 @@ class ViewController : Controller() {
         } else {
             ""
         }
+        records.add(Data("07.09", "3", "1400", "1234", "Buchungstext blablabla", "-22420.00", "47.11"))
     }
 
     fun onKeyPressedInTable(
@@ -50,7 +56,7 @@ class ViewController : Controller() {
                 KeyCode.RIGHT -> focusRightOrNextLine(selectedCell!!, tableView, keyEvent)
                 KeyCode.LEFT -> focusLeftOrPreviousLine(selectedCell!!, tableView, keyEvent)
                 else -> {
-                    log.warning("Invalid key code received: " + keyEvent.code)
+                    log.finest("Invalid key code received: " + keyEvent.code)
                 }
             }
         }
@@ -110,8 +116,39 @@ class ViewController : Controller() {
         }
     }
 
-    // KeyCode.isValidInput
-    fun KeyCode.isValidInput(): Boolean {
+    private fun KeyCode.isValidInput(): Boolean {
         return isDigitKey || isLetterKey || isKeypadKey
+    }
+
+    private fun selectFile(description: String): String {
+        val files = chooseFile(
+            mode = FileChooserMode.Single,
+            filters = arrayOf(
+                FileChooser.ExtensionFilter(description, "*.txt")
+            )
+        )
+        return if (files.size > 0) files[0].absolutePath else "";
+    }
+
+    fun onButtonSelectImportFilePressed() {
+        val filePath  = selectFile("Dateiformat")
+        if (filePath.isNotEmpty()) {
+            inputFileOK.value = true
+            controlView.inputFile.text = filePath
+        }
+    }
+
+    fun onButtonImportPressed() {
+    }
+
+    fun onButtonSelectExportFilePressed() {
+        val filePath  = selectFile("Dateiformat")
+        if (filePath.isNotEmpty()) {
+            outputFileOK.value = true
+            controlView.outputFile.text = filePath
+        }
+    }
+
+    fun onButtonExportPressed() {
     }
 }
