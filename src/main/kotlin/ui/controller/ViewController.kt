@@ -5,40 +5,64 @@ import javafx.beans.property.SimpleBooleanProperty
 import javafx.scene.control.TableColumn
 import javafx.scene.control.TablePosition
 import javafx.scene.control.TableView
+import javafx.scene.control.skin.TableViewSkin
+import javafx.scene.control.skin.VirtualFlow
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
 import javafx.stage.FileChooser
 import tornadofx.*
-import ui.app.ui.view.ControlView
-import ui.app.ui.view.TableView.Companion.COLUMN_HABEN_ID
-import ui.app.ui.view.TableView.Companion.COLUMN_UST_ID
+import data.DataParser
+import ui.app.helper.ErrorIndex
+import ui.app.helper.ErrorMessages
+import ui.app.helper.ErrorTableHelper
+import ui.view.ControlView
+import ui.view.TableView.Companion.COLUMN_HABEN_ID
+import ui.view.TableView.Companion.COLUMN_UST_ID
+import ui.css.CSSMessage.Companion.error
+import ui.css.CSSMessage.Companion.info
 import kotlin.system.exitProcess
 
 class ViewController : Controller() {
     val controlView: ControlView by inject()
 
-    val records = mutableListOf(
-        Data("07.09", "1", "1400", "1030", "Buchungstext blablabla", "920.00", "19.00"),
-        Data("11.11", "2", "4000", "0070", "Buchungstext blablabla", "77770.00", "07.00"),
-        Data("07.09", "3", "1400", "1234", "Buchungstext blablabla", "-22420.00", "47.11")
-    ).asObservable()
+    val records = mutableListOf<Data>().asObservable()
 
     val inputFileOK = SimpleBooleanProperty(false)
     val outputFileOK = SimpleBooleanProperty(false)
+    val tableValuesOK = SimpleBooleanProperty(true)
+
+    val errorTableHelper = ErrorTableHelper()
 
     fun closeApp() {
         exitProcess(0)
     }
 
-    fun validate(data: TableColumn.CellEditEvent<Data, Any>, item: Data?) {
-        controlView.messageLabel.text = if (data.tableColumn.id == COLUMN_HABEN_ID) {
-            COLUMN_HABEN_ID
-        } else if (data.tableColumn.id == COLUMN_UST_ID) {
-            COLUMN_UST_ID
-        } else {
-            ""
+    fun validate(editEvent: TableColumn.CellEditEvent<Data, Any>, item: Data) {
+        val keyPotentialErrorIndex = ErrorIndex(editEvent.tablePosition.row, COLUMN_HABEN_ID)
+        if (editEvent.tableColumn.id == COLUMN_HABEN_ID) {
+            if (!Data.Validation.HABEN_REGEX.matches(item.haben)) {
+                errorTableHelper.setError(
+                    keyPotentialErrorIndex,
+                    ErrorMessages.INVALID_COLUMN_HABEN_VALUE
+                )
+                showError(ErrorMessages.INVALID_COLUMN_HABEN_VALUE.message)
+            } else {
+                showMessage("")
+                errorTableHelper.removeError(keyPotentialErrorIndex)
+            }
+        } else if (editEvent.tableColumn.id == COLUMN_UST_ID) {
+            if (!Data.Validation.UST_REGEX.matches(item.umsatzSteuer)) {
+                errorTableHelper.setError(
+                    keyPotentialErrorIndex,
+                    ErrorMessages.INVALID_COLUMN_UST_VALUE
+                )
+                showError(ErrorMessages.INVALID_COLUMN_UST_VALUE.message)
+            } else {
+                showMessage("")
+                errorTableHelper.removeError(keyPotentialErrorIndex)
+            }
         }
-        records.add(Data("07.09", "3", "1400", "1234", "Buchungstext blablabla", "-22420.00", "47.11"))
+        tableValuesOK.value = !errorTableHelper.hasErrors()
     }
 
     fun onKeyPressedInTable(
@@ -97,7 +121,7 @@ class ViewController : Controller() {
             selectedCell
         } else if (selectedCell.tableColumn.id == COLUMN_UST_ID) {
             TablePosition(tableView, selectedCell.row + 1, tableView.columns[3]);
-        }else {
+        } else {
             null
         }
         selectCell(pos, tableView, keyEvent)
@@ -110,8 +134,10 @@ class ViewController : Controller() {
     ) {
         pos?.let {
             tableView.selectionModel.select(it.row)
-            tableView.focusModel.focus(it)
             tableView.selectionModel.clearAndSelect(it.row, it.tableColumn)
+            tableView.focusModel.focus(it)
+
+            ((tableView.skin as TableViewSkin<*>).children[1] as VirtualFlow<*>).scrollTo(it.row) // to trigger scrolling if row is not visible
             keyEvent.consume()
         }
     }
@@ -127,11 +153,11 @@ class ViewController : Controller() {
                 FileChooser.ExtensionFilter(description, "*.txt")
             )
         )
-        return if (files.size > 0) files[0].absolutePath else "";
+        return if (files.isNotEmpty()) files[0].absolutePath else "";
     }
 
     fun onButtonSelectImportFilePressed() {
-        val filePath  = selectFile("Dateiformat")
+        val filePath = selectFile("Dateiformat")
         if (filePath.isNotEmpty()) {
             inputFileOK.value = true
             controlView.inputFile.text = filePath
@@ -139,10 +165,13 @@ class ViewController : Controller() {
     }
 
     fun onButtonImportPressed() {
+        records.clear()
+        records.addAll(DataParser().convertFile2Data(controlView.inputFile.text))
+        showMessage("Datenimport abgeschlossen.")
     }
 
     fun onButtonSelectExportFilePressed() {
-        val filePath  = selectFile("Dateiformat")
+        val filePath = selectFile("Dateiformat")
         if (filePath.isNotEmpty()) {
             outputFileOK.value = true
             controlView.outputFile.text = filePath
@@ -150,5 +179,23 @@ class ViewController : Controller() {
     }
 
     fun onButtonExportPressed() {
+        if (records.isEmpty()) {
+            showError("Keine Daten für Stapelverarbeitung vorhanden.")
+            return
+        }
+        DataParser().convertData2File(records, controlView.outputFile.text)
+        showMessage("Stapelverarbeitung erfolgreich abgeschlossen.")
     }
+
+    private fun showMessage(message: String) {
+        controlView.messageLabel.style(false, info())
+        controlView.messageLabel.text = message
+    }
+
+    private fun showError(message: String) {
+        controlView.messageLabel.style(false, error())
+        controlView.messageLabel.text = message
+    }
+
+
 }

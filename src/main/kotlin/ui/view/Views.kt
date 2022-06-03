@@ -1,8 +1,8 @@
-package ui.app.ui.view
+package ui.view
 
 import data.Data
 import data.DataModel
-import javafx.beans.value.ObservableBooleanValue
+import javafx.geometry.Pos
 import javafx.scene.control.*
 import javafx.scene.input.KeyEvent
 import javafx.scene.paint.Color
@@ -36,11 +36,11 @@ class ControlView : View() {
             style {
                 padding = box(2.px)
             }
-            label("Eingabe") {
-                setPrefSize(80.0, 20.0);
+            label("Eingabe:") {
+                setPrefSize(90.0, 20.0);
             }
             inputFile = textfield {
-                setPrefSize(220.0, 20.0)
+                setPrefSize(250.0, 20.0)
                 isEditable = false
                 style {
                     backgroundColor += Color.LIGHTGRAY
@@ -67,11 +67,11 @@ class ControlView : View() {
             style {
                 padding = box(2.px)
             }
-            label("Ausgabe") {
-                setPrefSize(80.0, 20.0);
+            label("Ausgabe:") {
+                setPrefSize(90.0, 20.0);
             }
             outputFile = textfield() {
-                setPrefSize(220.0, 20.0)
+                setPrefSize(250.0, 20.0)
                 isEditable = false
                 style {
                     backgroundColor += Color.LIGHTGRAY
@@ -84,7 +84,7 @@ class ControlView : View() {
             }
             button("Buchungsexport starten") {
                 enableWhen {
-                    controller.outputFileOK
+                    controller.outputFileOK.and(controller.tableValuesOK)
                 }
                 action {
                     controller.onButtonExportPressed()
@@ -96,26 +96,39 @@ class ControlView : View() {
         vbox(spacing = 0) {
             separator() {
                 prefHeight = 10.0
+                style {
+                    padding = box(2.px)
+                }
             }
-            messageLabel = label("Hier wären Fehlermeldungen, Infos, etc.") {
+            messageLabel = label("") {
+                alignment = Pos.BOTTOM_CENTER
                 useMaxWidth = true
                 prefHeight = 30.0
-            }.also {
-                it.style {
+                prefWidth = 300.0
+                style {
                     backgroundColor += Color.SEASHELL
-                    padding = box(10.px)
                     fontWeight = FontWeight.BOLD
+                    textFill = Color.DARKGREEN
+                    padding = box(10.px)
+                    fillWidth = true
                 }
             }
             separator() {
                 prefHeight = 10.0
+                style {
+                    padding = box(2.px)
+                }
             }
         }
-        borderpane {
-            center<TableView>()
-        }.style {
-
-
+        vbox(spacing = 0) {
+            borderpane {
+                center<TableView>()
+                minHeight = 400.0
+                fitToParentHeight()
+            }.style {
+                prefHeight = 400.pt
+            }
+            fitToParentHeight()
         }
     }
 }
@@ -131,10 +144,19 @@ class TableView : View() {
     private val model: DataModel by inject()
 
     override val root = tableview(controller.records) {
+        placeholder =  label {
+            text = "Keine Daten"
+            style {
+                fontSize = 18.pt
+            }
+        }
+
         setSortPolicy { _ -> false }
 
         style {
             fontSize = 14.pt
+            fillHeight = true
+            prefHeight = 500.pt
         }
         prefWidth = 1024.0
         column("Datum", Data::datum) {
@@ -164,6 +186,7 @@ class TableView : View() {
         }
         column("Buchungstext", Data::buchungsText) {
             isReorderable = false
+            minWidth = 220.0
             remainingWidth()
             addClass(CSSTableCell.left)
         }
@@ -210,13 +233,9 @@ class TableView : View() {
             }
         }
 
-    private fun save(data: TableColumn.CellEditEvent<Data, Any>, data1: Data) {
-        if (model.isDirty) {
-            log.info("dirty")
-        }
+    private fun save(cellEditEvent: TableColumn.CellEditEvent<Data, Any>, data: Data) {
         model.commit()
-        controller.validate(data, data1)
-        println("Saving ${model.item.umsatzSteuer} / ${model.item.haben}")
+        controller.validate(cellEditEvent, data)
     }
 
 }
@@ -228,10 +247,6 @@ class MenuView : View() {
             fontSize = 12.pt
         }
         menu("Datei") {
-            item("Einstellungen").action {
-                controller.closeApp()
-            }
-            separator()
             item("Beenden").action {
                 controller.closeApp()
             }
