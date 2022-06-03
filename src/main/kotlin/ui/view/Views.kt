@@ -9,9 +9,12 @@ import javafx.scene.paint.Color
 import javafx.scene.text.FontWeight
 import javafx.stage.FileChooser
 import javafx.stage.StageStyle
+import mu.KotlinLogging
 import tornadofx.*
 import ui.controller.ViewController
 import ui.css.CSSTableCell
+import java.awt.Desktop
+import java.io.File
 
 class MasterView : View("Buchungsstapel kontieren") {
     override val root = borderpane {
@@ -256,7 +259,9 @@ class MenuView : View() {
                 find<VersionView>().openModal(stageStyle = StageStyle.UTILITY)
             }
             item("Anleitung").action {
-                controller.closeApp()
+                val logger = KotlinLogging.logger {}
+                logger.info { "Working Directory = " + System.getProperty("user.dir") }
+                Desktop.getDesktop().edit(File("Anleitung.txt"))
             }
         }
     }

@@ -65,7 +65,7 @@ task<Copy>("copyReleaseApp") {
     from("${buildDir}/libs/${appName}.jar")
     into("$releaseDir/app/")
     println("${buildDir}/libs/${appName}.jar")
-}.dependsOn("build")
+}
 
 task<Copy>("copyReleaseJRE") {
     from(layout.projectDirectory.dir("release-template"))
@@ -73,14 +73,16 @@ task<Copy>("copyReleaseJRE") {
     println("asd: " + layout.projectDirectory.dir("release-template"))
 }
 
-task<Zip>("zipRelease"){
+task<Zip>("zipRelease") {
     archiveBaseName.set(appName)
     destinationDirectory.set(file("$releaseDir/zip"))
     from(releaseDir) {
         exclude("zip/*") //
+        exclude("zip") //
     }
 }
 
 task<GradleBuild>("buildRelease") {
     tasks = listOf("copyReleaseLibs", "copyReleaseApp", "copyReleaseJRE", "zipRelease")
+    dependsOn("copyReleaseLibs", "copyReleaseApp", "copyReleaseJRE", "zipRelease")
 }
