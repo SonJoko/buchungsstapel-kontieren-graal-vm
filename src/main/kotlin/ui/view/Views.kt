@@ -147,7 +147,7 @@ class TableView : View() {
     private val model: DataModel by inject()
 
     override val root = tableview(controller.records) {
-        placeholder =  label {
+        placeholder = label {
             text = "Keine Daten"
             style {
                 fontSize = 18.pt
@@ -216,6 +216,7 @@ class TableView : View() {
         onEditCommit { data ->
             save(this, data)
         }
+
         addEventHandler(KeyEvent.KEY_PRESSED) { keyEvent ->
 
             controller.onKeyPressedInTable(keyEvent, selectedCell, this)
@@ -237,8 +238,7 @@ class TableView : View() {
         }
 
     private fun save(cellEditEvent: TableColumn.CellEditEvent<Data, Any>, data: Data) {
-        model.commit()
-        controller.validate(cellEditEvent, data)
+        controller.save(cellEditEvent, data, model)
     }
 
 }

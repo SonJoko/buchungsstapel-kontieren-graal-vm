@@ -1,25 +1,28 @@
 package ui.controller
 
 import data.Data
+import data.DataModel
+import data.DataParser
 import javafx.beans.property.SimpleBooleanProperty
+import javafx.event.Event
 import javafx.scene.control.TableColumn
 import javafx.scene.control.TablePosition
 import javafx.scene.control.TableView
+import javafx.scene.control.TextField
 import javafx.scene.control.skin.TableViewSkin
 import javafx.scene.control.skin.VirtualFlow
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
 import javafx.stage.FileChooser
 import tornadofx.*
-import data.DataParser
 import ui.app.helper.ErrorIndex
 import ui.app.helper.ErrorMessages
 import ui.app.helper.ErrorTableHelper
+import ui.css.CSSMessage.Companion.error
+import ui.css.CSSMessage.Companion.info
 import ui.view.ControlView
 import ui.view.TableView.Companion.COLUMN_HABEN_ID
 import ui.view.TableView.Companion.COLUMN_UST_ID
-import ui.css.CSSMessage.Companion.error
-import ui.css.CSSMessage.Companion.info
 import kotlin.system.exitProcess
 
 class ViewController : Controller() {
@@ -40,7 +43,7 @@ class ViewController : Controller() {
     fun validate(editEvent: TableColumn.CellEditEvent<Data, Any>, item: Data) {
         val keyPotentialErrorIndex = ErrorIndex(editEvent.tablePosition.row, COLUMN_HABEN_ID)
         if (editEvent.tableColumn.id == COLUMN_HABEN_ID) {
-            if (!Data.Validation.HABEN_REGEX.matches(item.haben)) {
+            if (!Data.Validation.HABEN_REGEX.matches(item.haben.trim())) {
                 errorTableHelper.setError(
                     keyPotentialErrorIndex,
                     ErrorMessages.INVALID_COLUMN_HABEN_VALUE
@@ -51,7 +54,7 @@ class ViewController : Controller() {
                 errorTableHelper.removeError(keyPotentialErrorIndex)
             }
         } else if (editEvent.tableColumn.id == COLUMN_UST_ID) {
-            if (!Data.Validation.UST_REGEX.matches(item.umsatzSteuer)) {
+            if (!Data.Validation.UST_REGEX.matches(item.umsatzSteuer.trim())) {
                 errorTableHelper.setError(
                     keyPotentialErrorIndex,
                     ErrorMessages.INVALID_COLUMN_UST_VALUE
@@ -71,8 +74,20 @@ class ViewController : Controller() {
         tableView: TableView<Data>
     ) {
         if (keyEvent.code.isValidInput()) {
+            if (keyEvent.target is TextField) { // Workaround to edit immediately
+                val textField = keyEvent.target as TextField
+                textField.selectAll()
+                textField.text = keyEvent.text
+                textField.positionCaret(1)
+                return
+            }
             if (selectedCell != null && selectedCell.tableColumn.isEditable) {
                 tableView.edit(selectedCell.row, selectedCell.tableColumn)
+                val focusedControl = tableView.scene?.focusOwner // textfield
+                Event.fireEvent(
+                    focusedControl,
+                    keyEvent.copyFor(keyEvent.source, focusedControl)
+                ) // Workaround to edit immediately
             }
         } else if (keyEvent.code.isArrowKey) {
 
@@ -195,6 +210,14 @@ class ViewController : Controller() {
     private fun showError(message: String) {
         controlView.messageLabel.style(false, error())
         controlView.messageLabel.text = message
+    }
+
+    fun save(cellEditEvent: TableColumn.CellEditEvent<Data, Any>, data: Data, model: DataModel) {
+        this.validate(cellEditEvent, data)
+        model.haben.set(model.haben.get().trim())
+        model.umsatzSteuer.set(model.umsatzSteuer.get().trim())
+        model.commit()
+        cellEditEvent.tableView.refresh()
     }
 
 
