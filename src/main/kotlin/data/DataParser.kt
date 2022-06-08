@@ -8,7 +8,7 @@ class DataParser {
     fun convertFile2Data(filePath: String): List<Data> {
         val records = mutableListOf<Data>()
         val file = File(filePath)
-        file.forEachLine { line ->
+        file.forEachLine(Charsets.ISO_8859_1) { line ->
             records.add(Data(
                 datum = readDatum(line),
                 beleg = readBeleg(line),
@@ -35,7 +35,7 @@ class DataParser {
     fun convertData2File(data: List<Data>, filePath: String) {
         val file = File(filePath)
         data.stream().map(this::buildRow2Write).reduce { line, nextLine -> line + nextLine }
-            .ifPresent { file.writeText(it) }
+            .ifPresent { file.writeText(it, Charsets.ISO_8859_1) }
     }
 
     private fun buildRow2Write(data: Data): String {
