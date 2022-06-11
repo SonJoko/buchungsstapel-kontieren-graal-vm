@@ -27,3 +27,4 @@ hs_err_pid*
 # folders
 build
 .idea
+release-template/java

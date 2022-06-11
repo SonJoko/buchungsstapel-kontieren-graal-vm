@@ -32,8 +32,10 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib")
     implementation("no.tornado:tornadofx:1.7.20")
     implementation("io.github.microutils:kotlin-logging:2.1.21")
-    implementation("org.slf4j:slf4j-simple:1.7.36")
-
+    implementation("org.slf4j:slf4j-api:1.7.36")
+    implementation("org.slf4j:slf4j-log4j12:1.7.36")
+    implementation("org.apache.tika:tika-core:2.3.0")
+    implementation("org.apache.tika:tika-parser-text-module:2.3.0")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.2")
 }

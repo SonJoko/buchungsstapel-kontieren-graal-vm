@@ -3,6 +3,8 @@ package ui.controller
 import data.Data
 import data.DataModel
 import data.DataParser
+import helper.Settings
+import helper.SettingsHelper
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.event.Event
 import javafx.scene.control.TableColumn
@@ -14,6 +16,7 @@ import javafx.scene.control.skin.VirtualFlow
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
 import javafx.stage.FileChooser
+import mu.KotlinLogging
 import tornadofx.*
 import ui.app.helper.ErrorIndex
 import ui.app.helper.ErrorMessages
@@ -23,18 +26,20 @@ import ui.css.CSSMessage.Companion.info
 import ui.view.ControlView
 import ui.view.TableView.Companion.COLUMN_HABEN_ID
 import ui.view.TableView.Companion.COLUMN_UST_ID
+import java.io.File
+import java.lang.Exception
 import kotlin.system.exitProcess
 
 class ViewController : Controller() {
-    val controlView: ControlView by inject()
-
+    private val controlView: ControlView by inject()
     val records = mutableListOf<Data>().asObservable()
 
     val inputFileOK = SimpleBooleanProperty(false)
     val outputFileOK = SimpleBooleanProperty(false)
     val tableValuesOK = SimpleBooleanProperty(true)
 
-    val errorTableHelper = ErrorTableHelper()
+    private val errorTableHelper = ErrorTableHelper()
+    private val logger = KotlinLogging.logger {}
 
     fun closeApp() {
         exitProcess(0)
@@ -81,7 +86,11 @@ class ViewController : Controller() {
                 textField.positionCaret(1)
                 return
             }
-            if (selectedCell != null && selectedCell.tableColumn.isEditable) {
+            if (selectedCell != null && mutableListOf(
+                    COLUMN_HABEN_ID,
+                    COLUMN_UST_ID
+                ).contains(selectedCell.tableColumn.id)
+            ) {
                 tableView.edit(selectedCell.row, selectedCell.tableColumn)
                 val focusedControl = tableView.scene?.focusOwner // textfield
                 Event.fireEvent(
@@ -161,21 +170,35 @@ class ViewController : Controller() {
         return isDigitKey || isLetterKey || isKeypadKey
     }
 
-    private fun selectFile(description: String): String {
+    private fun selectFile(description: String, initialDirectory: String): File? {
+        val initialDirectoryCheck: File? = try {
+            val checkFile =File(initialDirectory)
+            if (checkFile.exists()) {
+                checkFile
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            logger.warn { "Could not use configured initial directory: ${e.message}" }
+            null
+        }
+
         val files = chooseFile(
             mode = FileChooserMode.Single,
             filters = arrayOf(
                 FileChooser.ExtensionFilter(description, "*.txt")
-            )
+            ),
+            initialDirectory = initialDirectoryCheck
         )
-        return if (files.isNotEmpty()) files[0].absolutePath else "";
+        return if (files.isNotEmpty()) files[0] else null;
     }
 
     fun onButtonSelectImportFilePressed() {
-        val filePath = selectFile("Dateiformat")
-        if (filePath.isNotEmpty()) {
+        val filePath = selectFile("Dateiformat", SettingsHelper.readSettings().inputDefaultPath)
+        filePath?.let {
             inputFileOK.value = true
-            controlView.inputFile.text = filePath
+            controlView.inputFile.text = filePath.absolutePath
+            SettingsHelper.writeSettings(Settings(filePath.parentFile.absolutePath, ""))
         }
     }
 
@@ -186,10 +209,11 @@ class ViewController : Controller() {
     }
 
     fun onButtonSelectExportFilePressed() {
-        val filePath = selectFile("Dateiformat")
-        if (filePath.isNotEmpty()) {
+        val filePath = selectFile("Dateiformat", SettingsHelper.readSettings().exportDefaultPath)
+        filePath?.let {
             outputFileOK.value = true
-            controlView.outputFile.text = filePath
+            controlView.outputFile.text = filePath.absolutePath
+            SettingsHelper.writeSettings(Settings("", filePath.parentFile.absolutePath))
         }
     }
 

@@ -42,7 +42,7 @@ class CSSMessage {
         fun error(): InlineCss.() -> Unit = {
             backgroundColor += Color.SEASHELL
             fontWeight = FontWeight.BOLD
-            textFill = Color.DARKRED
+            textFill = Color.RED
             padding = box(10.px)
             fillWidth = true
         }

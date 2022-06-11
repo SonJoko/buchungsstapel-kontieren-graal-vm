@@ -41,6 +41,9 @@ class ControlView : View() {
             }
             label("Eingabe:") {
                 setPrefSize(90.0, 20.0);
+                style {
+                    fontWeight = FontWeight.BOLD
+                }
             }
             inputFile = textfield {
                 setPrefSize(250.0, 20.0)
@@ -72,6 +75,9 @@ class ControlView : View() {
             }
             label("Ausgabe:") {
                 setPrefSize(90.0, 20.0);
+                style {
+                    fontWeight = FontWeight.BOLD
+                }
             }
             outputFile = textfield() {
                 setPrefSize(250.0, 20.0)
@@ -221,10 +227,6 @@ class TableView : View() {
 
             controller.onKeyPressedInTable(keyEvent, selectedCell, this)
         }
-    }.also {
-        it.setOnKeyPressed { keyevent ->
-            log.info(keyevent.toString())
-        }
     }
 
     private fun TableCell<Data, String>.styleWithCheck(value: String, regex: Regex) =
@@ -259,8 +261,6 @@ class MenuView : View() {
                 find<VersionView>().openModal(stageStyle = StageStyle.UTILITY)
             }
             item("Anleitung").action {
-                val logger = KotlinLogging.logger {}
-                logger.info { "Working Directory = " + System.getProperty("user.dir") }
                 Desktop.getDesktop().edit(File("Anleitung.txt"))
             }
         }
