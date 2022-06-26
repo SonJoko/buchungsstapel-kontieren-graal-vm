@@ -172,10 +172,11 @@ class ViewController : Controller() {
 
     private fun selectFile(description: String, initialDirectory: String): File? {
         val initialDirectoryCheck: File? = try {
-            val checkFile =File(initialDirectory)
+            val checkFile = File(initialDirectory)
             if (checkFile.exists()) {
                 checkFile
             } else {
+                logger.warn { "Configured directory does not exist. Using default location." }
                 null
             }
         } catch (e: Exception) {

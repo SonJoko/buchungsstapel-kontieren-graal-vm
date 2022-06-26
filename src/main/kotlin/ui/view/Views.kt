@@ -261,7 +261,7 @@ class MenuView : View() {
                 find<VersionView>().openModal(stageStyle = StageStyle.UTILITY)
             }
             item("Anleitung").action {
-                Desktop.getDesktop().edit(File("Anleitung.txt"))
+                Desktop.getDesktop().open(File("Anleitung.pdf"))
             }
         }
     }

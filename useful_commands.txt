@@ -1,0 +1,7 @@
+# Build JRE
+/jlink.exe --module-path /c/DEV/github/buchungsstapel-kontieren/release/javafx-jmods-18.0.1/ --output /c/DEV/github/buchungsstapel-kontieren/release/custom-jre/ --add-modules java.base,java.logging,javafx.base,javafx.controls,javafx.fxml,javafx.graphics,javafx.media,javafx.swing,javafx.web
+
+# Check Dependencies
+/jdeps.exe /c/DEV/github/buchungsstapel-kontieren/build/libs/BuchungsstapelKontieren.jar
+
+#

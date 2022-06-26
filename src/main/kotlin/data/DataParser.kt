@@ -50,7 +50,16 @@ class DataParser {
     private fun readHaben(line: String) = readFromIndex(line, 16, 20)
     private fun readBuchungsText(line: String) = readFromIndex(line, 21, 45)
     private fun readBetrag(line: String) = readFromIndex(line, 46, 56)
-    private fun readUmsatzSteuer(line: String) = readFromIndex(line, 57, 61)
+    private fun readUmsatzSteuer(line: String) = fixDifferentFormatsUst(readFromIndex(line, 57, 61))
+
+    private fun fixDifferentFormatsUst(ust: String): String {
+        return if (ust.length == 4 && ust.indexOf(".") == 1) {
+            "0$ust"
+        } else {
+            ust
+        }
+    }
+
     private fun readFromIndex(value: String, start: Int, end: Int) = value.substring(IntRange(start, end)).trim()
 
     fun convertData2File(data: List<Data>, filePath: String) {
